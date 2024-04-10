@@ -1,8 +1,7 @@
 /*
-	single linked list merge
-	This problem requires you to merge two ordered singly linked lists into one ordered singly linked list
+    single linked list merge
+    This problem requires you to merge two ordered singly linked lists into one ordered singly linked list
 */
-// I AM NOT DONE
 
 use std::fmt::{self, Display, Formatter};
 use std::ptr::NonNull;
@@ -16,11 +15,13 @@ struct Node<T> {
 
 impl<T> Node<T> {
     fn new(t: T) -> Node<T> {
-        Node {
-            val: t,
-            next: None,
-        }
+        Node { val: t, next: None }
     }
+}
+
+fn val<T: Clone>(node: NonNull<Node<T>>) -> T {
+    let node = unsafe { node.as_ref() };
+    node.val.clone()
 }
 #[derive(Debug)]
 struct LinkedList<T> {
@@ -69,15 +70,60 @@ impl<T> LinkedList<T> {
             },
         }
     }
-	pub fn merge(list_a:LinkedList<T>,list_b:LinkedList<T>) -> Self
-	{
-		//TODO
-		Self {
+    fn pop_front(&mut self) -> Option<T> {
+        self.start.map(|node| unsafe {
+            let node = Box::from_raw(node.as_ptr());
+            self.start = node.next;
+            if self.start.is_none() {
+                self.end = None;
+            }
+            self.length -= 1;
+            node.val
+        })
+    }
+
+    fn into_iter(self) -> IntoIter<T> {
+        IntoIter { list: self }
+    }
+}
+
+impl<T: Ord + Clone> LinkedList<T> {
+    pub fn merge(mut list_a: LinkedList<T>, mut list_b: LinkedList<T>) -> Self {
+        //TODO
+        let mut new_list = Self {
             length: 0,
             start: None,
             end: None,
+        };
+        while let Some(val) = Self::cmp_pop(&mut list_a, &mut list_b) {
+            new_list.add(val);
         }
-	}
+        new_list
+    }
+    fn cmp_pop(list_a: &mut LinkedList<T>, list_b: &mut LinkedList<T>) -> Option<T> {
+        let list = match (list_a.start.map(val), list_b.start.map(val)) {
+            (Some(a), Some(b)) => {
+                if a > b {
+                    Some(list_b)
+                } else {
+                    Some(list_a)
+                }
+            }
+            (a, b) => a.map_or(b.and(Some(list_b)), |_| Some(list_a)),
+        };
+        list.and_then(|list| list.pop_front())
+    }
+}
+
+struct IntoIter<T> {
+    list: LinkedList<T>,
+}
+
+impl<T> Iterator for IntoIter<T> {
+    type Item = T;
+    fn next(&mut self) -> Option<Self::Item> {
+        self.list.pop_front()
+    }
 }
 
 impl<T> Display for LinkedList<T>
@@ -130,44 +176,44 @@ mod tests {
 
     #[test]
     fn test_merge_linked_list_1() {
-		let mut list_a = LinkedList::<i32>::new();
-		let mut list_b = LinkedList::<i32>::new();
-		let vec_a = vec![1,3,5,7];
-		let vec_b = vec![2,4,6,8];
-		let target_vec = vec![1,2,3,4,5,6,7,8];
-		
-		for i in 0..vec_a.len(){
-			list_a.add(vec_a[i]);
-		}
-		for i in 0..vec_b.len(){
-			list_b.add(vec_b[i]);
-		}
-		println!("list a {} list b {}", list_a,list_b);
-		let mut list_c = LinkedList::<i32>::merge(list_a,list_b);
-		println!("merged List is {}", list_c);
-		for i in 0..target_vec.len(){
-			assert_eq!(target_vec[i],*list_c.get(i as i32).unwrap());
-		}
-	}
-	#[test]
-	fn test_merge_linked_list_2() {
-		let mut list_a = LinkedList::<i32>::new();
-		let mut list_b = LinkedList::<i32>::new();
-		let vec_a = vec![11,33,44,88,89,90,100];
-		let vec_b = vec![1,22,30,45];
-		let target_vec = vec![1,11,22,30,33,44,45,88,89,90,100];
+        let mut list_a = LinkedList::<i32>::new();
+        let mut list_b = LinkedList::<i32>::new();
+        let vec_a = vec![1, 3, 5, 7];
+        let vec_b = vec![2, 4, 6, 8];
+        let target_vec = vec![1, 2, 3, 4, 5, 6, 7, 8];
 
-		for i in 0..vec_a.len(){
-			list_a.add(vec_a[i]);
-		}
-		for i in 0..vec_b.len(){
-			list_b.add(vec_b[i]);
-		}
-		println!("list a {} list b {}", list_a,list_b);
-		let mut list_c = LinkedList::<i32>::merge(list_a,list_b);
-		println!("merged List is {}", list_c);
-		for i in 0..target_vec.len(){
-			assert_eq!(target_vec[i],*list_c.get(i as i32).unwrap());
-		}
-	}
+        for i in 0..vec_a.len() {
+            list_a.add(vec_a[i]);
+        }
+        for i in 0..vec_b.len() {
+            list_b.add(vec_b[i]);
+        }
+        println!("list a {} list b {}", list_a, list_b);
+        let mut list_c = LinkedList::<i32>::merge(list_a, list_b);
+        println!("merged List is {}", list_c);
+        for i in 0..target_vec.len() {
+            assert_eq!(target_vec[i], *list_c.get(i as i32).unwrap());
+        }
+    }
+    #[test]
+    fn test_merge_linked_list_2() {
+        let mut list_a = LinkedList::<i32>::new();
+        let mut list_b = LinkedList::<i32>::new();
+        let vec_a = vec![11, 33, 44, 88, 89, 90, 100];
+        let vec_b = vec![1, 22, 30, 45];
+        let target_vec = vec![1, 11, 22, 30, 33, 44, 45, 88, 89, 90, 100];
+
+        for i in 0..vec_a.len() {
+            list_a.add(vec_a[i]);
+        }
+        for i in 0..vec_b.len() {
+            list_b.add(vec_b[i]);
+        }
+        println!("list a {} list b {}", list_a, list_b);
+        let mut list_c = LinkedList::<i32>::merge(list_a, list_b);
+        println!("merged List is {}", list_c);
+        for i in 0..target_vec.len() {
+            assert_eq!(target_vec[i], *list_c.get(i as i32).unwrap());
+        }
+    }
 }
