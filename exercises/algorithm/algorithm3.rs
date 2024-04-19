@@ -4,14 +4,14 @@
     you can use bubble sorting, insertion sorting, heap sorting, etc.
 */
 
-use std::fs::read_link;
+use std::{fmt::LowerExp, fs::read_link};
 
-fn sort<T: Ord>(array: &mut [T]) {
+fn sort<T: Ord + std::fmt::Debug>(array: &mut [T]) {
     //TODO
     recursion(array);
 }
 
-fn recursion<T: Ord>(array: &mut [T]) {
+fn recursion<T: Ord + std::fmt::Debug>(array: &mut [T]) {
     let len = array.len();
     if len < 2 {
         return;
@@ -21,29 +21,39 @@ fn recursion<T: Ord>(array: &mut [T]) {
         }
         return;
     } else {
-        let mid = 0;
-        let mut low = 0;
-        let mut hight = array.len() - 1;
-        while low < hight {
-            low = array
-                .iter()
-                .enumerate()
-                .take_while(|(_, item)| **item > array[0])
-                .next()
-                .map(|item| item.0)
-                .unwrap_or(hight);
-            hight = array[low..len - 1]
-                .iter()
-                .enumerate()
-                .rev()
-                .take_while(|(_, item)| **item < array[0])
-                .next()
-                .map(|item| item.0)
-                .unwrap_or(low);
-            array.swap(low, hight);
-        }
-        array.swap(0, low);
-        let (a1, a2) = array.split_at_mut(low);
+        let low = 0;
+        let hight = array.len() - 1;
+        dbg!(low, hight);
+        let arr = array as *mut [T];
+        let mut left = (low..=hight).filter(|index| array[*index] > array[0]);
+        let mut right = (low..=hight).rev().filter(|index| array[*index] < array[0]);
+        let mid = loop {
+            match (left.next(), right.next()) {
+                (Some(low), Some(hight)) => {
+                    if low < hight {
+                        unsafe {
+                            (*arr).swap(low, hight);
+                        }
+                    } else {
+                        array.swap(0, hight);
+                        break hight;
+                    }
+                }
+                (None, Some(hight)) => {
+                    array.swap(0, hight);
+                    break hight;
+                }
+                (Some(low), None) => {
+                    array.swap(0, low - 1);
+                    break low - 1;
+                }
+                _ => {
+                    break 1;
+                }
+            }
+        };
+        let mid = if mid == 0 { mid + 1 } else { mid };
+        let (a1, a2) = array.split_at_mut(mid);
         recursion(a1);
         recursion(a2);
     }
