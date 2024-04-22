@@ -1,8 +1,7 @@
 /*
-	heap
-	This question requires you to implement a binary heap function
+    heap
+    This question requires you to implement a binary heap function
 */
-// I AM NOT DONE
 
 use std::cmp::Ord;
 use std::default::Default;
@@ -38,6 +37,9 @@ where
 
     pub fn add(&mut self, value: T) {
         //TODO
+        self.items.push(value);
+        self.count += 1;
+        self.swim(self.count);
     }
 
     fn parent_idx(&self, idx: usize) -> usize {
@@ -58,7 +60,56 @@ where
 
     fn smallest_child_idx(&self, idx: usize) -> usize {
         //TODO
-		0
+        if !self.children_present(idx) {
+            panic!("No child")
+        }
+        let items = &self.items;
+        let left = self.left_child_idx(idx);
+        let right = self.right_child_idx(idx);
+        if (self.comparator)(&items[left], &items[right]) {
+            left
+        } else {
+            right
+        }
+    }
+
+    fn biggest_child_idx(&self, idx: usize) -> usize {
+        //TODO
+        if !self.children_present(idx) {
+            panic!("No child")
+        }
+        let items = &self.items;
+        let left = self.left_child_idx(idx);
+        let right = self.right_child_idx(idx);
+        if right <= self.count && (self.comparator)(&items[left], &items[right]) {
+            right
+        } else {
+            left
+        }
+    }
+
+    fn swim(&mut self, mut idx: usize) {
+        let parent_idx = self.parent_idx(idx);
+        while idx > 1 && (self.comparator)(&self.items[parent_idx], &self.items[idx]) {
+            self.items.swap(idx, parent_idx);
+            idx = parent_idx;
+        }
+    }
+
+    fn sink(&mut self, mut idx: usize) {
+        loop {
+            if !self.children_present(idx) {
+                break;
+            }
+            let son = self.biggest_child_idx(idx);
+            let heap = &self.items;
+            if son <= self.count && (self.comparator)(&heap[idx], &heap[son]) {
+                self.items.swap(idx, son);
+                idx = son;
+            } else {
+                break;
+            }
+        }
     }
 }
 
@@ -85,7 +136,14 @@ where
 
     fn next(&mut self) -> Option<T> {
         //TODO
-		None
+        if self.count != 0 {
+            self.items.swap(1, self.count);
+            self.sink(1);
+            self.count -= 1;
+            self.items.pop()
+        } else {
+            None
+        }
     }
 }
 
