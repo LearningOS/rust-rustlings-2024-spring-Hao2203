@@ -66,33 +66,17 @@ where
         let items = &self.items;
         let left = self.left_child_idx(idx);
         let right = self.right_child_idx(idx);
-        if (self.comparator)(&items[left], &items[right]) {
+        if right > self.count || (self.comparator)(&items[left], &items[right]) {
             left
         } else {
             right
-        }
-    }
-
-    fn biggest_child_idx(&self, idx: usize) -> usize {
-        //TODO
-        if !self.children_present(idx) {
-            panic!("No child")
-        }
-        let items = &self.items;
-        let left = self.left_child_idx(idx);
-        let right = self.right_child_idx(idx);
-        if right <= self.count && (self.comparator)(&items[left], &items[right]) {
-            right
-        } else {
-            left
         }
     }
 
     fn swim(&mut self, mut idx: usize) {
-        let parent_idx = self.parent_idx(idx);
-        while idx > 1 && (self.comparator)(&self.items[parent_idx], &self.items[idx]) {
-            self.items.swap(idx, parent_idx);
-            idx = parent_idx;
+        while idx > 1 && (self.comparator)(&self.items[idx], &self.items[idx / 2]) {
+            self.items.swap(idx, idx / 2);
+            idx = idx / 2;
         }
     }
 
@@ -101,9 +85,9 @@ where
             if !self.children_present(idx) {
                 break;
             }
-            let son = self.biggest_child_idx(idx);
+            let son = self.smallest_child_idx(idx);
             let heap = &self.items;
-            if son <= self.count && (self.comparator)(&heap[idx], &heap[son]) {
+            if son <= self.count && !(self.comparator)(&heap[idx], &heap[son]) {
                 self.items.swap(idx, son);
                 idx = son;
             } else {
@@ -138,9 +122,10 @@ where
         //TODO
         if self.count != 0 {
             self.items.swap(1, self.count);
-            self.sink(1);
+            let res = self.items.pop();
             self.count -= 1;
-            self.items.pop()
+            self.sink(1);
+            res
         } else {
             None
         }
@@ -187,6 +172,7 @@ mod tests {
         heap.add(2);
         heap.add(9);
         heap.add(11);
+        dbg!(&heap.items);
         assert_eq!(heap.len(), 4);
         assert_eq!(heap.next(), Some(2));
         assert_eq!(heap.next(), Some(4));
@@ -202,6 +188,7 @@ mod tests {
         heap.add(2);
         heap.add(9);
         heap.add(11);
+        dbg!(&heap.items);
         assert_eq!(heap.len(), 4);
         assert_eq!(heap.next(), Some(11));
         assert_eq!(heap.next(), Some(9));
